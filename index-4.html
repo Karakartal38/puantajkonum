@@ -1,0 +1,1007 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Puantaj Sistemi</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --primary: #2563eb; --primary-dark: #1d4ed8;
+            --success: #059669; --danger: #dc2626;
+            --warning: #d97706; --purple: #7c3aed;
+            --gray-50: #f9fafb; --gray-100: #f3f4f6; --gray-200: #e5e7eb;
+            --gray-300: #d1d5db; --gray-500: #6b7280; --gray-700: #374151; --gray-900: #111827;
+        }
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%); min-height: 100vh; }
+        .container { max-width: 520px; margin: 0 auto; padding: 12px; }
+        .header { text-align: center; padding: 16px 0; }
+        .logo { width: 56px; height: 56px; border-radius: 14px; display: flex; align-items: center; justify-content: center; margin: 0 auto 10px; }
+        .logo.blue { background: var(--primary); }
+        .logo.purple { background: var(--purple); }
+        .logo.green { background: var(--success); }
+        .logo svg { width: 28px; height: 28px; color: white; }
+        .header h1 { font-size: 20px; font-weight: 700; }
+        .header p { color: var(--gray-500); font-size: 13px; }
+        .card { background: white; border-radius: 14px; padding: 16px; margin-bottom: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.08); }
+        .card-title { font-size: 14px; font-weight: 600; margin-bottom: 12px; display: flex; align-items: center; gap: 6px; }
+        .btn { width: 100%; padding: 12px; border: none; border-radius: 10px; font-size: 14px; font-weight: 600; cursor: pointer; font-family: inherit; display: flex; align-items: center; justify-content: center; gap: 6px; }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-success { background: var(--success); color: white; }
+        .btn-danger { background: var(--danger); color: white; }
+        .btn-purple { background: var(--purple); color: white; }
+        .btn-outline { background: white; border: 2px solid var(--gray-200); color: var(--gray-700); }
+        .btn-sm { padding: 8px 12px; font-size: 13px; }
+        .btn-group { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+        .input-group { margin-bottom: 12px; }
+        .input-group label { display: block; font-size: 13px; font-weight: 500; margin-bottom: 4px; }
+        .input-group input, .input-group select { width: 100%; padding: 10px 12px; border: 2px solid var(--gray-200); border-radius: 8px; font-size: 14px; font-family: inherit; }
+        .input-group input:focus, .input-group select:focus { outline: none; border-color: var(--primary); }
+        .tabs { display: flex; background: white; border-radius: 10px; padding: 3px; margin-bottom: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); overflow-x: auto; }
+        .tab { flex: 1; padding: 8px 4px; border: none; background: transparent; font-size: 12px; font-weight: 500; color: var(--gray-500); cursor: pointer; border-radius: 7px; font-family: inherit; white-space: nowrap; min-width: 50px; }
+        .tab.active { background: var(--primary); color: white; }
+        .page { display: none; }
+        .page.active { display: block; }
+        .toast { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%) translateY(100px); padding: 10px 16px; border-radius: 8px; color: white; font-size: 13px; font-weight: 500; z-index: 1000; transition: transform 0.3s; }
+        .toast.show { transform: translateX(-50%) translateY(0); }
+        .toast.success { background: var(--success); }
+        .toast.error { background: var(--danger); }
+        .toast.warning { background: var(--warning); }
+        .role-card { background: white; border: 2px solid var(--gray-200); border-radius: 12px; padding: 16px; margin-bottom: 10px; cursor: pointer; text-align: center; transition: all 0.2s; }
+        .role-card:hover { border-color: var(--primary); }
+        .role-card .icon { font-size: 32px; margin-bottom: 6px; }
+        .role-card h3 { font-size: 15px; font-weight: 600; }
+        .role-card p { font-size: 12px; color: var(--gray-500); }
+        .employee-card { background: var(--gray-50); border-radius: 8px; padding: 10px; margin-bottom: 6px; display: flex; justify-content: space-between; align-items: center; }
+        .employee-card .name { font-weight: 600; font-size: 13px; }
+        .employee-card .detail { font-size: 11px; color: var(--gray-500); }
+        .records-table { width: 100%; font-size: 12px; }
+        .records-table th { text-align: left; padding: 8px 4px; color: var(--gray-500); border-bottom: 2px solid var(--gray-200); }
+        .records-table td { padding: 8px 4px; border-bottom: 1px solid var(--gray-100); }
+        .loading-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(255,255,255,0.95); display: none; align-items: center; justify-content: center; flex-direction: column; gap: 12px; z-index: 999; }
+        .loading-overlay.show { display: flex; }
+        .spinner { width: 32px; height: 32px; border: 3px solid var(--gray-200); border-top-color: var(--primary); border-radius: 50%; animation: spin 0.8s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .location-info { background: #d1fae5; border-radius: 8px; padding: 10px; margin-bottom: 10px; font-size: 13px; }
+        .location-info.error { background: #fee2e2; }
+        .time-display { text-align: center; padding: 14px; background: var(--gray-50); border-radius: 10px; margin-bottom: 12px; }
+        .time-display .time { font-size: 36px; font-weight: 700; }
+        .time-display .date { font-size: 12px; color: var(--gray-500); }
+        .attendance-info { background: var(--gray-50); border-radius: 10px; padding: 12px; }
+        .attendance-row { display: flex; justify-content: space-between; padding: 6px 0; }
+        .attendance-row:not(:last-child) { border-bottom: 1px solid var(--gray-200); }
+        .attendance-row .label { color: var(--gray-500); font-size: 13px; }
+        .attendance-row .value { font-weight: 600; font-size: 13px; }
+        .company-badge { display: inline-block; padding: 4px 10px; background: #dbeafe; border-radius: 12px; font-size: 12px; font-weight: 600; color: var(--primary); margin-bottom: 10px; }
+        .day-toggle { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+        .day-btn { padding: 6px 10px; border: 2px solid var(--gray-200); border-radius: 6px; background: white; font-size: 12px; cursor: pointer; }
+        .day-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
+        .holiday-item { display: flex; justify-content: space-between; align-items: center; padding: 8px; background: var(--gray-50); border-radius: 6px; margin-bottom: 6px; font-size: 12px; }
+        .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; }
+        .stat-card { background: #dbeafe; border-radius: 10px; padding: 12px; text-align: center; }
+        .stat-card .value { font-size: 24px; font-weight: 700; color: var(--primary); }
+        .stat-card .label { font-size: 11px; color: var(--gray-500); }
+        .monthly-table { width: 100%; font-size: 10px; border-collapse: collapse; }
+        .monthly-table th, .monthly-table td { padding: 4px 2px; text-align: center; border: 1px solid var(--gray-200); }
+        .monthly-table th { background: var(--gray-100); }
+        .monthly-table .weekend { background: #fef3c7; }
+        .monthly-table .holiday { background: #fee2e2; }
+        .monthly-table .overtime { color: var(--success); font-weight: 600; }
+        .monthly-table .missing { color: var(--danger); }
+        .ai-box { background: #ede9fe; border-radius: 10px; padding: 12px; margin-top: 12px; }
+        .ai-box h4 { color: var(--purple); font-size: 13px; margin-bottom: 8px; }
+        .ai-box p { font-size: 12px; line-height: 1.5; }
+        .link-btn { background: none; border: none; color: var(--primary); font-size: 13px; cursor: pointer; text-decoration: underline; }
+        .checkbox-label { display: flex; align-items: center; gap: 8px; font-size: 13px; cursor: pointer; }
+        .checkbox-label input { width: 18px; height: 18px; }
+        #qr-reader, #emp-qr-reader { width: 100%; border-radius: 10px; overflow: hidden; }
+        @media print { body * { visibility: hidden; } .print-area, .print-area * { visibility: visible; } .print-area { position: absolute; left: 0; top: 0; } }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- ROLE SELECTION -->
+        <div id="roleSelectionPage" class="page active">
+            <div class="header">
+                <div class="logo blue"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></div>
+                <h1>Puantaj Sistemi</h1>
+                <p>Giriş türünü seçin</p>
+            </div>
+            <div class="role-card" onclick="showPage('superAdminLoginPage')">
+                <div class="icon">👑</div>
+                <h3>Süper Admin</h3>
+                <p>Firma oluştur ve yönet</p>
+            </div>
+            <div class="role-card" onclick="showCompanyLoginPage()">
+                <div class="icon">🏢</div>
+                <h3>Firma Girişi</h3>
+                <p>Firma paneline giriş</p>
+            </div>
+            <div class="role-card" onclick="showEmployeePage()">
+                <div class="icon">👤</div>
+                <h3>Çalışan</h3>
+                <p>Giriş / Çıkış yap</p>
+            </div>
+        </div>
+
+        <!-- SUPER ADMIN LOGIN -->
+        <div id="superAdminLoginPage" class="page">
+            <div class="header">
+                <div class="logo purple"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg></div>
+                <h1>Süper Admin</h1>
+            </div>
+            <div class="card">
+                <div class="input-group">
+                    <label>Şifre</label>
+                    <input type="password" id="superAdminPwd" placeholder="Süper admin şifresi">
+                </div>
+                <button class="btn btn-purple" onclick="superAdminLogin()">Giriş Yap</button>
+            </div>
+            <button class="btn btn-outline" onclick="showPage('roleSelectionPage')">← Geri</button>
+        </div>
+
+        <!-- SUPER ADMIN PANEL -->
+        <div id="superAdminPanelPage" class="page">
+            <div class="header">
+                <div class="logo purple"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg></div>
+                <h1>Süper Admin</h1>
+            </div>
+            <div class="card">
+                <div class="card-title">➕ Yeni Firma</div>
+                <div class="input-group"><label>Firma Adı *</label><input type="text" id="newCompName" placeholder="ABC Şirketi"></div>
+                <div class="input-group"><label>Şifre *</label><input type="text" id="newCompPwd" placeholder="Firma şifresi"></div>
+                <div class="input-group"><label>E-posta (Şifre sıfırlama)</label><input type="email" id="newCompEmail" placeholder="firma@email.com"></div>
+                <button class="btn btn-outline btn-sm" onclick="getNewCompLocation()" style="margin-bottom:8px;">📍 Konum Al</button>
+                <div id="newCompLocation" class="location-info" style="display:none;"></div>
+                <div class="input-group"><label>Yarıçap (m)</label><input type="number" id="newCompRadius" value="100"></div>
+                <button class="btn btn-purple" onclick="createCompany()">🏢 Firma Oluştur</button>
+            </div>
+            <div class="card">
+                <div class="card-title">🏢 Firmalar</div>
+                <div id="saCompanyList"></div>
+            </div>
+            <button class="btn btn-danger" onclick="showPage('roleSelectionPage')">🚪 Çıkış</button>
+        </div>
+
+        <!-- COMPANY LOGIN -->
+        <div id="companyLoginPage" class="page">
+            <div class="header">
+                <div class="logo blue"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5"/></svg></div>
+                <h1>Firma Girişi</h1>
+            </div>
+            <div class="card">
+                <div class="input-group"><label>Firma</label><select id="compLoginSelect"><option value="">Seçin...</option></select></div>
+                <div class="input-group"><label>Şifre</label><input type="password" id="compLoginPwd" placeholder="Firma şifresi"></div>
+                <button class="btn btn-primary" onclick="companyLogin()">Giriş Yap</button>
+                <button class="link-btn" onclick="showPage('forgotPwdPage')" style="margin-top:10px;display:block;width:100%;text-align:center;">🔑 Şifremi Unuttum</button>
+            </div>
+            <button class="btn btn-outline" onclick="showPage('roleSelectionPage')">← Geri</button>
+        </div>
+
+        <!-- FORGOT PASSWORD -->
+        <div id="forgotPwdPage" class="page">
+            <div class="header">
+                <div class="logo blue"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/></svg></div>
+                <h1>Şifre Sıfırla</h1>
+            </div>
+            <div class="card">
+                <div class="input-group"><label>Firma</label><select id="forgotCompSelect"><option value="">Seçin...</option></select></div>
+                <div class="input-group"><label>Kayıtlı E-posta</label><input type="email" id="forgotEmail" placeholder="firma@email.com"></div>
+                <button class="btn btn-primary" onclick="resetPassword()">Şifre Sıfırla</button>
+                <p style="font-size:11px;color:var(--gray-500);margin-top:8px;text-align:center;">E-posta doğruysa yeni şifre gösterilecek</p>
+            </div>
+            <button class="btn btn-outline" onclick="showCompanyLoginPage()">← Geri</button>
+        </div>
+
+        <!-- COMPANY ADMIN PANEL -->
+        <div id="companyAdminPage" class="page">
+            <div class="header">
+                <div class="logo blue"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5"/></svg></div>
+                <h1 id="compAdminTitle">Firma</h1>
+                <p>Çalışan ve puantaj yönetimi</p>
+            </div>
+
+            <div class="tabs" id="companyTabs">
+                <button class="tab active" onclick="showCompTab('link')">🔗</button>
+                <button class="tab" onclick="showCompTab('qr')">📱</button>
+                <button class="tab" onclick="showCompTab('employees')">👥</button>
+                <button class="tab" onclick="showCompTab('manualAtt')">✍️</button>
+                <button class="tab" onclick="showCompTab('daily')">📋</button>
+                <button class="tab" onclick="showCompTab('monthly')">📊</button>
+                <button class="tab" onclick="showCompTab('settings')">⚙️</button>
+            </div>
+
+            <!-- Link Tab -->
+            <div id="linkTab" class="comp-tab">
+                <div class="card">
+                    <div class="card-title">🔗 Çalışan Kayıt Linki</div>
+                    <p style="font-size:12px;color:var(--gray-500);margin-bottom:8px;">Bu linki çalışanlara gönderin</p>
+                    <div style="background:var(--gray-100);padding:8px;border-radius:6px;font-size:11px;word-break:break-all;" id="empLink">--</div>
+                    <button class="btn btn-primary btn-sm" onclick="copyEmpLink()" style="margin-top:8px;">📋 Kopyala</button>
+                </div>
+            </div>
+
+            <!-- QR Tab -->
+            <div id="qrTab" class="comp-tab" style="display:none;">
+                <div class="card">
+                    <div class="card-title">📱 QR Kod</div>
+                    <button class="btn btn-outline btn-sm" onclick="genCompQR()">QR Oluştur</button>
+                    <div id="compQRArea" class="print-area" style="display:none;margin-top:12px;text-align:center;">
+                        <div id="compQRDiv" style="display:inline-block;padding:12px;background:white;border-radius:10px;"></div>
+                        <h3 id="compQRTitle" style="margin-top:8px;"></h3>
+                        <button class="btn btn-sm btn-primary" onclick="window.print()" style="margin-top:8px;">🖨️ Yazdır</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Employees Tab -->
+            <div id="employeesTab" class="comp-tab" style="display:none;">
+                <div class="card">
+                    <div class="card-title">➕ Manuel Personel Ekle</div>
+                    <div class="input-group"><label>Ad *</label><input type="text" id="manualFirstName" placeholder="Ad"></div>
+                    <div class="input-group"><label>Soyad *</label><input type="text" id="manualLastName" placeholder="Soyad"></div>
+                    <div class="input-group"><label>Telefon *</label><input type="tel" id="manualPhone" placeholder="05XX XXX XX XX"></div>
+                    <div class="input-group"><label>İşe Başlangıç Tarihi *</label><input type="date" id="manualStartDate"></div>
+                    <button class="btn btn-success btn-sm" onclick="addManualEmployee()">➕ Personel Ekle</button>
+                </div>
+                <div class="card">
+                    <div class="card-title">👥 Çalışanlar</div>
+                    <div id="compEmpList"></div>
+                </div>
+                <div id="empEditModal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:1000;padding:20px;">
+                    <div style="background:white;border-radius:14px;padding:16px;max-width:400px;margin:50px auto;">
+                        <div class="card-title">✏️ Personel Düzenle</div>
+                        <input type="hidden" id="editEmpId">
+                        <div class="input-group"><label>Ad</label><input type="text" id="editFirstName"></div>
+                        <div class="input-group"><label>Soyad</label><input type="text" id="editLastName"></div>
+                        <div class="input-group"><label>Telefon</label><input type="tel" id="editPhone"></div>
+                        <div class="input-group"><label>İşe Başlangıç</label><input type="date" id="editStartDate"></div>
+                        <div class="input-group"><label>İşten Çıkış</label><input type="date" id="editEndDate"><small style="color:var(--gray-500);">Boş bırakın = Hala çalışıyor</small></div>
+                        <div class="btn-group" style="margin-top:10px;">
+                            <button class="btn btn-primary btn-sm" onclick="saveEmpEdit()">💾 Kaydet</button>
+                            <button class="btn btn-outline btn-sm" onclick="closeEmpEdit()">İptal</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Manual Attendance Tab -->
+            <div id="manualAttTab" class="comp-tab" style="display:none;">
+                <div class="card">
+                    <div class="card-title">✍️ Manuel Giriş/Çıkış Kaydet</div>
+                    <p style="font-size:12px;color:var(--gray-500);margin-bottom:10px;">Telefonu olmayan veya şarjı biten çalışan için</p>
+                    <div class="input-group"><label>Çalışan *</label><select id="manualAttEmp"><option value="">Seçin...</option></select></div>
+                    <div class="input-group"><label>Tarih *</label><input type="date" id="manualAttDate"></div>
+                    <div class="btn-group">
+                        <div class="input-group"><label>Giriş Saati</label><input type="time" id="manualAttIn"></div>
+                        <div class="input-group"><label>Çıkış Saati</label><input type="time" id="manualAttOut"></div>
+                    </div>
+                    <button class="btn btn-primary btn-sm" onclick="saveManualAttendance()">💾 Kaydet</button>
+                </div>
+                <div class="card">
+                    <div class="card-title">📋 Bugünkü Kayıtlar</div>
+                    <div id="manualAttList"></div>
+                </div>
+            </div>
+
+            <!-- Daily Tab -->
+            <div id="dailyTab" class="comp-tab" style="display:none;">
+                <div class="card">
+                    <div class="card-title">📋 Günlük Puantaj</div>
+                    <div class="input-group"><label>Tarih</label><input type="date" id="dailyDate" onchange="loadDaily()"></div>
+                    <table class="records-table">
+                        <thead><tr><th>Çalışan</th><th>Giriş</th><th>Çıkış</th><th>Süre</th><th>FM</th></tr></thead>
+                        <tbody id="dailyBody"></tbody>
+                    </table>
+                    <button class="btn btn-outline btn-sm" onclick="exportDaily()" style="margin-top:10px;">📥 Excel</button>
+                </div>
+            </div>
+
+            <!-- Monthly Tab -->
+            <div id="monthlyTab" class="comp-tab" style="display:none;">
+                <div class="card">
+                    <div class="card-title">📊 Aylık Puantaj</div>
+                    <div class="input-group"><label>Ay</label><input type="month" id="monthlyMonth" onchange="loadMonthly()"></div>
+                    <div class="input-group"><label>Çalışan</label><select id="monthlyEmp" onchange="loadMonthly()"><option value="">Tümü</option></select></div>
+                </div>
+                <div id="monthlyStats" class="stat-grid" style="display:none;"></div>
+                <div class="card" id="monthlyTableCard" style="display:none;">
+                    <div class="card-title">📅 Detay</div>
+                    <div style="overflow-x:auto;"><table class="monthly-table" id="monthlyTable"></table></div>
+                </div>
+                <div id="aiBox" class="ai-box" style="display:none;">
+                    <h4>🤖 AI Analizi</h4>
+                    <p id="aiText"></p>
+                </div>
+                <button class="btn btn-outline btn-sm" onclick="exportMonthly()" style="margin-top:10px;">📥 Aylık Rapor</button>
+            </div>
+
+            <!-- Settings Tab -->
+            <div id="settingsTab" class="comp-tab" style="display:none;">
+                <div class="card">
+                    <div class="card-title">⏰ Çalışma Saatleri</div>
+                    <div class="btn-group">
+                        <div class="input-group"><label>Giriş</label><input type="time" id="workStart" value="09:00"></div>
+                        <div class="input-group"><label>Çıkış</label><input type="time" id="workEnd" value="18:00"></div>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-title">📅 Çalışma Günleri</div>
+                    <div class="day-toggle" id="workDays">
+                        <button class="day-btn active" data-day="1">Pzt</button>
+                        <button class="day-btn active" data-day="2">Sal</button>
+                        <button class="day-btn active" data-day="3">Çar</button>
+                        <button class="day-btn active" data-day="4">Per</button>
+                        <button class="day-btn active" data-day="5">Cum</button>
+                        <button class="day-btn" data-day="6">Cmt</button>
+                        <button class="day-btn" data-day="0">Paz</button>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-title">🎉 Resmi Tatiller</div>
+                    <div id="holidayList"></div>
+                    <div class="btn-group" style="margin-top:8px;">
+                        <input type="date" id="newHolDate">
+                        <input type="text" id="newHolName" placeholder="Tatil adı">
+                    </div>
+                    <button class="btn btn-outline btn-sm" onclick="addHoliday()" style="margin-top:6px;">➕ Ekle</button>
+                </div>
+                <div class="card">
+                    <div class="card-title">🔐 Şifre Değiştir</div>
+                    <div class="input-group"><label>Yeni Şifre</label><input type="password" id="newCompPwdChange" placeholder="Yeni şifre"></div>
+                    <button class="btn btn-outline btn-sm" onclick="changeCompPwd()">Değiştir</button>
+                </div>
+                <button class="btn btn-primary" onclick="saveSettings()" style="margin-top:8px;">💾 Kaydet</button>
+            </div>
+
+            <button class="btn btn-danger" onclick="companyLogout()" style="margin-top:12px;">🚪 Çıkış</button>
+        </div>
+
+        <!-- EMPLOYEE PAGE -->
+        <div id="employeePage" class="page">
+            <div class="header">
+                <div class="logo green"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg></div>
+                <h1>Çalışan</h1>
+                <p id="empStatus">Firma seçin</p>
+            </div>
+
+            <div id="empCompSelect" class="card">
+                <div class="card-title">🏢 Firma Seçin</div>
+                <div id="empCompList"></div>
+            </div>
+
+            <div id="empRegister" style="display:none;">
+                <div class="card">
+                    <div class="company-badge" id="empRegBadge">🏢 Firma</div>
+                    <button class="btn btn-outline btn-sm" onclick="empChangeComp()" id="empChangeBtn" style="margin-bottom:10px;">← Firma Değiştir</button>
+                    <div class="card-title">📝 Kayıt</div>
+                    <div class="input-group"><label>Ad *</label><input type="text" id="regFirstName" placeholder="Adınız"></div>
+                    <div class="input-group"><label>Soyad *</label><input type="text" id="regLastName" placeholder="Soyadınız"></div>
+                    <div class="input-group"><label>Telefon *</label><input type="tel" id="regPhone" placeholder="05XX XXX XX XX"></div>
+                    <label class="checkbox-label"><input type="checkbox" id="regConsent" onchange="validateReg()"> KVKK'yı kabul ediyorum</label>
+                    <button class="btn btn-success" onclick="registerEmp()" id="regBtn" disabled style="margin-top:10px;">Kayıt Ol</button>
+                </div>
+            </div>
+
+            <div id="empAttendance" style="display:none;">
+                <div class="company-badge" id="empAttBadge">🏢 Firma</div>
+                <div class="time-display">
+                    <div class="time" id="empTime">--:--</div>
+                    <div class="date" id="empDate">--</div>
+                </div>
+                <div class="card">
+                    <div class="card-title">📋 Bugün</div>
+                    <div class="attendance-info">
+                        <div class="attendance-row"><span class="label">🟢 Giriş</span><span class="value" id="todayIn">--:--</span></div>
+                        <div class="attendance-row"><span class="label">🔴 Çıkış</span><span class="value" id="todayOut">--:--</span></div>
+                        <div class="attendance-row"><span class="label">⏱️ Süre</span><span class="value" id="todayTotal">--</span></div>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-title">📍 Giriş / Çıkış</div>
+                    <div class="tabs" style="margin-bottom:10px;">
+                        <button class="tab active" onclick="setEmpMethod('loc')" id="empMethodLoc">📍 Konum</button>
+                        <button class="tab" onclick="setEmpMethod('qr')" id="empMethodQR">📷 QR</button>
+                    </div>
+                    <div id="empLocDiv">
+                        <button class="btn btn-outline btn-sm" onclick="getEmpLoc()" style="margin-bottom:8px;">📍 <span id="empLocText">Konum Al</span></button>
+                        <div id="empLocStatus" style="display:none;"></div>
+                    </div>
+                    <div id="empQRDiv" style="display:none;"><div id="emp-qr-reader"></div></div>
+                    <div class="btn-group" style="margin-top:10px;">
+                        <button class="btn btn-success" onclick="doCheckIn()" id="btnCheckIn">➡️ Giriş</button>
+                        <button class="btn btn-danger" onclick="doCheckOut()" id="btnCheckOut">⬅️ Çıkış</button>
+                    </div>
+                </div>
+            </div>
+
+            <button class="btn btn-outline" onclick="showPage('roleSelectionPage')" style="margin-top:12px;" id="empBackBtn">← Ana Menü</button>
+        </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+    <div class="loading-overlay" id="loading"><div class="spinner"></div><span id="loadingText">Yükleniyor...</span></div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getFirestore, collection, doc, addDoc, getDoc, getDocs, updateDoc, deleteDoc, query, where, setDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+        const app = initializeApp({
+            apiKey: "AIzaSyAIKTTeKK8noQY2UCsebQZzihO_J_lk7oE",
+            authDomain: "puantaj-1c953.firebaseapp.com",
+            projectId: "puantaj-1c953",
+            storageBucket: "puantaj-1c953.firebasestorage.app",
+            messagingSenderId: "346575232138",
+            appId: "1:346575232138:web:c3f964b8818fdd71ed2173"
+        });
+        const db = getFirestore(app);
+        window.db = db; window.collection = collection; window.doc = doc; window.addDoc = addDoc;
+        window.getDoc = getDoc; window.getDocs = getDocs; window.updateDoc = updateDoc;
+        window.deleteDoc = deleteDoc; window.query = query; window.where = where; window.setDoc = setDoc;
+        window.firebaseReady = true;
+        initApp();
+    </script>
+
+    <script>
+        let SUPER_PWD = 'super123';
+        let currentComp = null, currentEmp = null, currentLoc = null, newCompLoc = null, urlCompId = null, empMethod = 'loc', qrScanner = null;
+        
+        const DEFAULT_HOLIDAYS = [
+            {date:'2025-01-01',name:'Yılbaşı'},{date:'2025-04-23',name:'23 Nisan'},{date:'2025-05-01',name:'1 Mayıs'},
+            {date:'2025-05-19',name:'19 Mayıs'},{date:'2025-07-15',name:'15 Temmuz'},{date:'2025-08-30',name:'30 Ağustos'},
+            {date:'2025-10-29',name:'29 Ekim'},{date:'2025-03-30',name:'Ramazan Bayramı'},{date:'2025-03-31',name:'Ramazan Bayramı'},
+            {date:'2025-04-01',name:'Ramazan Bayramı'},{date:'2025-06-06',name:'Kurban Bayramı'},{date:'2025-06-07',name:'Kurban Bayramı'},
+            {date:'2025-06-08',name:'Kurban Bayramı'},{date:'2025-06-09',name:'Kurban Bayramı'}
+        ];
+
+        // Utilities
+        const toast = (m,t='success') => { const e=document.getElementById('toast'); e.textContent=m; e.className='toast '+t+' show'; setTimeout(()=>e.classList.remove('show'),3000); };
+        const showLoad = (t='Yükleniyor...') => { document.getElementById('loadingText').textContent=t; document.getElementById('loading').classList.add('show'); };
+        const hideLoad = () => document.getElementById('loading').classList.remove('show');
+        const fmtTime = d => { if(!d) return '--:--'; const x=d.toDate?d.toDate():new Date(d); return x.toLocaleTimeString('tr-TR',{hour:'2-digit',minute:'2-digit'}); };
+        const fmtDate = d => new Date(d).toLocaleDateString('tr-TR',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+        const today = () => new Date().toISOString().split('T')[0];
+        const calcDist = (a,b,c,d) => { const R=6371e3,p=Math.PI/180,x=Math.sin((c-a)*p/2)**2+Math.cos(a*p)*Math.cos(c*p)*Math.sin((d-b)*p/2)**2; return R*2*Math.atan2(Math.sqrt(x),Math.sqrt(1-x)); };
+        const getDevId = () => { let i=localStorage.getItem('pdev'); if(!i){i='D'+Date.now()+Math.random().toString(36).substr(2,6);localStorage.setItem('pdev',i);} return i; };
+        const randPwd = () => Math.random().toString(36).slice(-8);
+        const calcStdHours = (s,e) => { const [sh,sm]=s.split(':').map(Number),[eh,em]=e.split(':').map(Number); return (eh+em/60)-(sh+sm/60); };
+
+        // Page nav
+        window.showPage = id => { document.querySelectorAll('.page').forEach(p=>p.classList.remove('active')); document.getElementById(id).classList.add('active'); };
+
+        // Super Admin
+        window.superAdminLogin = async () => {
+            try { const d=await getDoc(doc(db,'settings','superadmin')); if(d.exists()&&d.data().password) SUPER_PWD=d.data().password; } catch(e){}
+            if(document.getElementById('superAdminPwd').value===SUPER_PWD){ showPage('superAdminPanelPage'); loadSACompanies(); toast('Giriş başarılı!'); }
+            else toast('Şifre yanlış','error');
+        };
+        window.getNewCompLocation = () => {
+            showLoad('Konum...');
+            navigator.geolocation.getCurrentPosition(p=>{ newCompLoc={lat:p.coords.latitude,lng:p.coords.longitude}; hideLoad();
+                document.getElementById('newCompLocation').style.display='block';
+                document.getElementById('newCompLocation').innerHTML='✅ '+newCompLoc.lat.toFixed(5)+', '+newCompLoc.lng.toFixed(5);
+                toast('Konum alındı!');
+            },()=>{hideLoad();toast('Konum alınamadı','error');},{enableHighAccuracy:true,timeout:20000});
+        };
+        window.createCompany = async () => {
+            const n=document.getElementById('newCompName').value.trim(),p=document.getElementById('newCompPwd').value.trim(),
+                  e=document.getElementById('newCompEmail').value.trim(),r=parseInt(document.getElementById('newCompRadius').value)||100;
+            if(!n||!p){toast('Ad ve şifre gerekli','error');return;} if(!newCompLoc){toast('Konum alın','error');return;}
+            showLoad('Kaydediliyor...');
+            try {
+                await addDoc(collection(db,'companies'),{name:n,password:p,email:e,radius:r,latitude:newCompLoc.lat,longitude:newCompLoc.lng,
+                    workStartTime:'09:00',workEndTime:'18:00',workDays:[1,2,3,4,5],holidays:DEFAULT_HOLIDAYS,createdAt:new Date()});
+                document.getElementById('newCompName').value='';document.getElementById('newCompPwd').value='';document.getElementById('newCompEmail').value='';
+                document.getElementById('newCompLocation').style.display='none';newCompLoc=null;
+                hideLoad();toast('Firma oluşturuldu!');loadSACompanies();
+            }catch(e){hideLoad();toast('Hata','error');}
+        };
+        async function loadSACompanies(){
+            const c=document.getElementById('saCompanyList');
+            try{ const s=await getDocs(collection(db,'companies'));
+                if(s.empty){c.innerHTML='<p style="text-align:center;color:var(--gray-500);">Firma yok</p>';return;}
+                c.innerHTML=s.docs.map(d=>{const x=d.data();return `<div class="employee-card"><div><div class="name">🏢 ${x.name}</div><div class="detail">🔑 ${x.password} | 📧 ${x.email||'-'}</div></div><button onclick="delComp('${d.id}')" style="background:none;border:none;color:var(--danger);cursor:pointer;">🗑️</button></div>`;}).join('');
+            }catch(e){c.innerHTML='<p style="color:var(--danger);">Hata</p>';}
+        }
+        window.delComp = async id => { if(!confirm('Silmek istediğinize emin misiniz?'))return; try{await deleteDoc(doc(db,'companies',id));toast('Silindi');loadSACompanies();}catch(e){toast('Hata','error');} };
+
+        // Company Login
+        window.showCompanyLoginPage = async () => { showPage('companyLoginPage'); await loadCompSelect('compLoginSelect'); };
+        async function loadCompSelect(id){ try{ const s=await getDocs(collection(db,'companies')); document.getElementById(id).innerHTML='<option value="">Seçin...</option>'+s.docs.map(d=>`<option value="${d.id}">${d.data().name}</option>`).join(''); }catch(e){} }
+        window.companyLogin = async () => {
+            const id=document.getElementById('compLoginSelect').value,p=document.getElementById('compLoginPwd').value;
+            if(!id){toast('Firma seçin','warning');return;}
+            showLoad('Giriş...');
+            try{ const d=await getDoc(doc(db,'companies',id));
+                if(d.exists()&&d.data().password===p){ currentComp={id:d.id,...d.data()}; hideLoad(); showCompanyAdmin(); toast('Giriş başarılı!'); }
+                else{hideLoad();toast('Şifre yanlış','error');}
+            }catch(e){hideLoad();toast('Hata','error');}
+        };
+        window.resetPassword = async () => {
+            const id=document.getElementById('forgotCompSelect').value,e=document.getElementById('forgotEmail').value.trim();
+            if(!id||!e){toast('Firma ve e-posta girin','warning');return;}
+            showLoad('Kontrol...');
+            try{ const d=await getDoc(doc(db,'companies',id));
+                if(d.exists()&&d.data().email===e){ const np=randPwd(); await updateDoc(doc(db,'companies',id),{password:np}); hideLoad(); alert('Yeni şifreniz: '+np); showCompanyLoginPage(); }
+                else{hideLoad();toast('E-posta eşleşmedi','error');}
+            }catch(e){hideLoad();toast('Hata','error');}
+        };
+        document.getElementById('forgotPwdPage') && (window.showForgotPage = async () => { showPage('forgotPwdPage'); await loadCompSelect('forgotCompSelect'); });
+
+        // Company Admin
+        function showCompanyAdmin(){
+            showPage('companyAdminPage');
+            document.getElementById('compAdminTitle').textContent=currentComp.name;
+            document.getElementById('empLink').textContent=location.origin+location.pathname+'?firma='+currentComp.id;
+            document.getElementById('dailyDate').value=today();
+            document.getElementById('monthlyMonth').value=new Date().toISOString().slice(0,7);
+            loadSettings(); loadCompEmps(); loadMonthlyEmpSelect();
+        }
+        window.showCompTab = t => {
+            document.querySelectorAll('.comp-tab').forEach(x=>x.style.display='none');
+            document.querySelectorAll('#companyTabs .tab').forEach(x=>x.classList.remove('active'));
+            document.getElementById(t+'Tab').style.display='block';
+            event.target.classList.add('active');
+            if(t==='employees')loadCompEmps(); if(t==='daily')loadDaily(); if(t==='monthly')loadMonthly(); if(t==='settings')loadSettings();
+        };
+        window.copyEmpLink = () => { navigator.clipboard.writeText(document.getElementById('empLink').textContent).then(()=>toast('Kopyalandı!')); };
+        window.genCompQR = () => {
+            const d=document.getElementById('compQRDiv'); d.innerHTML='';
+            new QRCode(d,{text:'PUANTAJ-'+currentComp.id+'-'+Date.now(),width:200,height:200,colorDark:'#1e40af'});
+            document.getElementById('compQRArea').style.display='block';
+            document.getElementById('compQRTitle').textContent=currentComp.name;
+            toast('QR oluşturuldu!');
+        };
+        async function loadCompEmps(){
+            const c=document.getElementById('compEmpList');
+            try{ const q=query(collection(db,'employees'),where('companyId','==',currentComp.id)),s=await getDocs(q);
+                if(s.empty){c.innerHTML='<p style="text-align:center;color:var(--gray-500);">Çalışan yok</p>';return;}
+                c.innerHTML=s.docs.map(d=>{
+                    const e=d.data();
+                    const startDate = e.startDate || '-';
+                    const endDate = e.endDate || '';
+                    const status = endDate ? '<span style="color:var(--danger);">Ayrıldı</span>' : '<span style="color:var(--success);">Aktif</span>';
+                    return `<div class="employee-card" style="flex-direction:column;align-items:flex-start;gap:6px;">
+                        <div style="display:flex;justify-content:space-between;width:100%;align-items:center;">
+                            <div class="name">${e.firstName} ${e.lastName}</div>
+                            <div>${status}</div>
+                        </div>
+                        <div class="detail">📱 ${e.phone} | 📅 Başlangıç: ${startDate}${endDate ? ' | Çıkış: '+endDate : ''}</div>
+                        <div style="display:flex;gap:8px;margin-top:4px;">
+                            <button onclick="editEmp('${d.id}')" style="background:none;border:none;color:var(--primary);cursor:pointer;font-size:12px;">✏️ Düzenle</button>
+                            <button onclick="delEmp('${d.id}')" style="background:none;border:none;color:var(--danger);cursor:pointer;font-size:12px;">🗑️ Sil</button>
+                        </div>
+                    </div>`;
+                }).join('');
+            }catch(e){console.error(e);}
+        }
+        window.editEmp = async id => {
+            try{
+                const d = await getDoc(doc(db,'employees',id));
+                if(d.exists()){
+                    const e = d.data();
+                    document.getElementById('editEmpId').value = id;
+                    document.getElementById('editFirstName').value = e.firstName || '';
+                    document.getElementById('editLastName').value = e.lastName || '';
+                    document.getElementById('editPhone').value = e.phone || '';
+                    document.getElementById('editStartDate').value = e.startDate || '';
+                    document.getElementById('editEndDate').value = e.endDate || '';
+                    document.getElementById('empEditModal').style.display = 'block';
+                }
+            }catch(e){toast('Hata','error');}
+        };
+        window.saveEmpEdit = async () => {
+            const id = document.getElementById('editEmpId').value;
+            const data = {
+                firstName: document.getElementById('editFirstName').value.trim(),
+                lastName: document.getElementById('editLastName').value.trim(),
+                phone: document.getElementById('editPhone').value.trim(),
+                startDate: document.getElementById('editStartDate').value,
+                endDate: document.getElementById('editEndDate').value
+            };
+            if(!data.firstName || !data.lastName){toast('Ad ve soyad gerekli','error');return;}
+            showLoad('Kaydediliyor...');
+            try{
+                await updateDoc(doc(db,'employees',id), data);
+                hideLoad();
+                toast('Kaydedildi!');
+                closeEmpEdit();
+                loadCompEmps();
+            }catch(e){hideLoad();toast('Hata','error');}
+        };
+        window.closeEmpEdit = () => { document.getElementById('empEditModal').style.display = 'none'; };
+        window.addManualEmployee = async () => {
+            const fn = document.getElementById('manualFirstName').value.trim();
+            const ln = document.getElementById('manualLastName').value.trim();
+            const ph = document.getElementById('manualPhone').value.trim();
+            const startDate = document.getElementById('manualStartDate').value;
+            if(!fn || !ln || !ph || !startDate){toast('Tüm alanları doldurun','error');return;}
+            showLoad('Ekleniyor...');
+            try{
+                await addDoc(collection(db,'employees'),{
+                    companyId: currentComp.id,
+                    companyName: currentComp.name,
+                    firstName: fn,
+                    lastName: ln,
+                    phone: ph,
+                    startDate: startDate,
+                    endDate: '',
+                    deviceId: 'MANUAL-'+Date.now(),
+                    createdAt: new Date()
+                });
+                hideLoad();
+                toast('Personel eklendi!');
+                document.getElementById('manualFirstName').value = '';
+                document.getElementById('manualLastName').value = '';
+                document.getElementById('manualPhone').value = '';
+                document.getElementById('manualStartDate').value = '';
+                loadCompEmps();
+                loadMonthlyEmpSelect();
+            }catch(e){hideLoad();toast('Hata','error');console.error(e);}
+        };
+        async function loadMonthlyEmpSelect(){
+            try{ const q=query(collection(db,'employees'),where('companyId','==',currentComp.id)),s=await getDocs(q);
+                document.getElementById('monthlyEmp').innerHTML='<option value="">Tümü</option>'+s.docs.map(d=>`<option value="${d.id}">${d.data().firstName} ${d.data().lastName}</option>`).join('');
+            }catch(e){}
+        }
+        window.delEmp = async id => { if(!confirm('Silmek istediğinize emin misiniz?'))return; try{await deleteDoc(doc(db,'employees',id));toast('Silindi');loadCompEmps();loadMonthlyEmpSelect();}catch(e){} };
+
+        // Daily
+        window.loadDaily = async () => {
+            const tbody=document.getElementById('dailyBody'),date=document.getElementById('dailyDate').value;
+            if(!date)return;
+            try{ const q=query(collection(db,'attendance'),where('companyId','==',currentComp.id),where('date','==',date)),s=await getDocs(q);
+                if(s.empty){tbody.innerHTML='<tr><td colspan="5" style="text-align:center;color:var(--gray-500);">Kayıt yok</td></tr>';return;}
+                const std=calcStdHours(currentComp.workStartTime||'09:00',currentComp.workEndTime||'18:00');
+                tbody.innerHTML=s.docs.map(d=>{const r=d.data();let dur=0,ot=0;
+                    if(r.checkIn&&r.checkOut){const ci=r.checkIn.toDate?r.checkIn.toDate():new Date(r.checkIn),co=r.checkOut.toDate?r.checkOut.toDate():new Date(r.checkOut);dur=(co-ci)/3600000;ot=Math.max(0,dur-std);}
+                    return `<tr><td>${r.employeeName}</td><td>${fmtTime(r.checkIn)}</td><td>${r.checkOut?fmtTime(r.checkOut):'--'}</td><td>${dur?dur.toFixed(1)+'s':'--'}</td><td style="color:${ot>0?'var(--success)':'inherit'}">${ot>0?'+'+ot.toFixed(1):'-'}</td></tr>`;
+                }).join('');
+            }catch(e){}
+        };
+        window.exportDaily = async () => {
+            const date=document.getElementById('dailyDate').value; if(!date){toast('Tarih seçin','warning');return;}
+            try{ const q=query(collection(db,'attendance'),where('companyId','==',currentComp.id),where('date','==',date)),s=await getDocs(q);
+                if(s.empty){toast('Kayıt yok','warning');return;}
+                const std=calcStdHours(currentComp.workStartTime||'09:00',currentComp.workEndTime||'18:00');
+                let csv='Çalışan,Tarih,Giriş,Çıkış,Süre,Fazla Mesai\n';
+                s.docs.forEach(d=>{const r=d.data();let dur=0,ot=0;
+                    if(r.checkIn&&r.checkOut){const ci=r.checkIn.toDate?r.checkIn.toDate():new Date(r.checkIn),co=r.checkOut.toDate?r.checkOut.toDate():new Date(r.checkOut);dur=(co-ci)/3600000;ot=Math.max(0,dur-std);}
+                    csv+=`"${r.employeeName}","${r.date}","${fmtTime(r.checkIn)}","${r.checkOut?fmtTime(r.checkOut):''}","${dur.toFixed(2)}","${ot.toFixed(2)}"\n`;
+                });
+                downloadCSV(csv,currentComp.name+'_'+date+'.csv');
+            }catch(e){}
+        };
+
+        // Monthly
+        window.loadMonthly = async () => {
+            const month=document.getElementById('monthlyMonth').value,empId=document.getElementById('monthlyEmp').value;
+            if(!month)return; showLoad('Hesaplanıyor...');
+            try{
+                const [y,m]=month.split('-').map(Number),start=`${y}-${String(m).padStart(2,'0')}-01`,end=`${y}-${String(m).padStart(2,'0')}-${new Date(y,m,0).getDate()}`;
+                const q=query(collection(db,'attendance'),where('companyId','==',currentComp.id),where('date','>=',start),where('date','<=',end)),s=await getDocs(q);
+                let recs=s.docs.map(d=>({id:d.id,...d.data()})); if(empId)recs=recs.filter(r=>r.employeeId===empId);
+                const wDays=currentComp.workDays||[1,2,3,4,5],hols=(currentComp.holidays||DEFAULT_HOLIDAYS).map(h=>h.date),std=calcStdHours(currentComp.workStartTime||'09:00',currentComp.workEndTime||'18:00');
+                let totalH=0,totalOT=0,present=new Set(),expDays=0;
+                const dim=new Date(y,m,0).getDate();
+                for(let d=1;d<=dim;d++){const ds=`${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`,dow=new Date(y,m-1,d).getDay();if(wDays.includes(dow)&&!hols.includes(ds))expDays++;}
+                recs.forEach(r=>{if(r.checkIn&&r.checkOut){const ci=r.checkIn.toDate?r.checkIn.toDate():new Date(r.checkIn),co=r.checkOut.toDate?r.checkOut.toDate():new Date(r.checkOut),h=(co-ci)/3600000;totalH+=h;totalOT+=Math.max(0,h-std);present.add(r.date);}});
+                const miss=expDays-present.size;
+                document.getElementById('monthlyStats').style.display='grid';
+                document.getElementById('monthlyStats').innerHTML=`<div class="stat-card"><div class="value">${totalH.toFixed(1)}</div><div class="label">Toplam Saat</div></div><div class="stat-card"><div class="value" style="color:var(--success)">+${totalOT.toFixed(1)}</div><div class="label">Fazla Mesai</div></div><div class="stat-card"><div class="value">${present.size}/${expDays}</div><div class="label">Gelen Gün</div></div><div class="stat-card"><div class="value" style="color:${miss>0?'var(--danger)':'var(--success)'}">${miss}</div><div class="label">Eksik Gün</div></div>`;
+                // Table
+                const tbl=document.getElementById('monthlyTable'),dn=['Paz','Pzt','Sal','Çar','Per','Cum','Cmt'];
+                let html='<thead><tr><th>Gün</th><th>Giriş</th><th>Çıkış</th><th>Süre</th><th>FM</th></tr></thead><tbody>';
+                for(let d=1;d<=dim;d++){const ds=`${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`,dow=new Date(y,m-1,d).getDay(),isWE=!wDays.includes(dow),isH=hols.includes(ds),rec=recs.find(r=>r.date===ds);
+                    let cls=isH?'holiday':isWE?'weekend':'',ci='-',co='-',dur='-',ot='-';
+                    if(rec&&rec.checkIn){ci=fmtTime(rec.checkIn);if(rec.checkOut){co=fmtTime(rec.checkOut);const cin=rec.checkIn.toDate?rec.checkIn.toDate():new Date(rec.checkIn),cout=rec.checkOut.toDate?rec.checkOut.toDate():new Date(rec.checkOut),h=(cout-cin)/3600000;dur=h.toFixed(1);const o=h-std;ot=o>0?`<span class="overtime">+${o.toFixed(1)}</span>`:'-';}}
+                    else if(!isWE&&!isH&&new Date(ds)<new Date())ci='<span class="missing">Yok</span>';
+                    html+=`<tr class="${cls}"><td>${d} ${dn[dow]}</td><td>${ci}</td><td>${co}</td><td>${dur}</td><td>${ot}</td></tr>`;
+                }
+                html+='</tbody>';tbl.innerHTML=html;document.getElementById('monthlyTableCard').style.display='block';
+                // AI
+                const avg=present.size>0?totalH/present.size:0,rate=expDays>0?(present.size/expDays*100):0;
+                let ai='';
+                if(rate>=95)ai+='✅ Mükemmel devam: %'+rate.toFixed(0)+' katılım. ';
+                else if(rate>=80)ai+='⚠️ İyi devam: %'+rate.toFixed(0)+' katılım, '+miss+' gün eksik. ';
+                else ai+='❌ Düşük devam: %'+rate.toFixed(0)+' katılım - değerlendirme gerekli. ';
+                if(avg>std+1)ai+='⏰ Günlük ort. '+avg.toFixed(1)+'s (standart: '+std+'s) - yoğun çalışma. ';
+                else if(avg>=std-0.5)ai+='👍 Günlük ort. '+avg.toFixed(1)+'s - standartlara uygun. ';
+                else ai+='📉 Günlük ort. '+avg.toFixed(1)+'s - beklenenin altında. ';
+                if(totalOT>20)ai+='🔥 '+totalOT.toFixed(1)+'s fazla mesai - iş yükü dengelenmeli.';
+                else if(totalOT>0)ai+='💪 '+totalOT.toFixed(1)+'s fazla mesai yapıldı.';
+                document.getElementById('aiText').innerHTML=ai;document.getElementById('aiBox').style.display='block';
+                hideLoad();
+            }catch(e){hideLoad();console.error(e);}
+        };
+        window.exportMonthly = async () => {
+            const month=document.getElementById('monthlyMonth').value; 
+            if(!month){toast('Ay seçin','warning');return;}
+            
+            showLoad('Puantaj hazırlanıyor...');
+            
+            const [y,m]=month.split('-').map(Number);
+            const dim=new Date(y,m,0).getDate();
+            const monthNames=['','OCAK','ŞUBAT','MART','NİSAN','MAYIS','HAZİRAN','TEMMUZ','AĞUSTOS','EYLÜL','EKİM','KASIM','ARALIK'];
+            const dayNamesFull=['PAZAR','PAZARTESİ','SALI','ÇARŞAMBA','PERŞEMBE','CUMA','CUMARTESİ'];
+            const wDays=currentComp.workDays||[1,2,3,4,5];
+            const hols=(currentComp.holidays||DEFAULT_HOLIDAYS).map(h=>h.date);
+            
+            try{
+                const empQ=query(collection(db,'employees'),where('companyId','==',currentComp.id));
+                const empSnap=await getDocs(empQ);
+                let employees=empSnap.docs.map(d=>({id:d.id,...d.data()}));
+                
+                employees=employees.filter(e=>{
+                    if(!e.endDate) return true;
+                    return e.endDate.substring(0,7)>=month;
+                });
+                
+                if(employees.length===0){
+                    for(let i=0;i<15;i++) employees.push({id:'bos'+i,firstName:'',lastName:''});
+                }
+                
+                const start=`${y}-${String(m).padStart(2,'0')}-01`;
+                const end=`${y}-${String(m).padStart(2,'0')}-${dim}`;
+                const attQ=query(collection(db,'attendance'),where('companyId','==',currentComp.id),where('date','>=',start),where('date','<=',end));
+                const attSnap=await getDocs(attQ);
+                const records=attSnap.docs.map(d=>d.data());
+                
+                // HTML tabanlı Excel dosyası oluştur (renkli)
+                let html=`<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+<head><meta charset="UTF-8">
+<style>
+td,th{border:1px solid #333;padding:4px 6px;text-align:center;font-family:Arial;font-size:10pt;}
+.header{background:#2E7D32;color:white;font-weight:bold;}
+.subheader{background:#4CAF50;color:white;font-size:8pt;}
+.weekend{background:#FFF59D;}
+.holiday{background:#FFCDD2;}
+.name{text-align:left;min-width:150px;}
+.sno{width:30px;}
+.worked{background:#C8E6C9;font-weight:bold;}
+.absent{background:#FFCDD2;}
+.leave{background:#BBDEFB;color:#1565C0;}
+.total{background:#E3F2FD;font-weight:bold;}
+.footer{background:#FFF3E0;font-size:9pt;text-align:left;}
+</style>
+</head><body>
+<table>
+<tr><td colspan="${dim+4}" style="background:#1565C0;color:white;font-size:14pt;font-weight:bold;text-align:center;padding:10px;">
+${currentComp.name.toUpperCase()} - ${monthNames[m]} ${y} PUANTAJ CETVELİ
+</td></tr>
+<tr><td colspan="${dim+4}" style="background:#1976D2;color:white;font-size:9pt;text-align:center;">
+Çalışma Saatleri: ${currentComp.workStartTime||'09:00'} - ${currentComp.workEndTime||'18:00'} | Hazırlanma: ${new Date().toLocaleDateString('tr-TR')}
+</td></tr>
+<tr class="header"><th class="sno">S.NO</th><th class="name">ADI SOYADI</th>`;
+                
+                for(let d=1;d<=dim;d++) html+=`<th>${d}</th>`;
+                html+=`<th>Ç.GÜN</th><th>İZİN</th></tr>`;
+                
+                html+=`<tr class="subheader"><th></th><th></th>`;
+                for(let d=1;d<=dim;d++){
+                    const dow=new Date(y,m-1,d).getDay();
+                    const isWE=(dow===0||dow===6);
+                    html+=`<th${isWE?' class="weekend"':''}>${dayNamesFull[dow].substring(0,3)}</th>`;
+                }
+                html+=`<th></th><th></th></tr>`;
+                
+                let rowNum=1;
+                for(const emp of employees){
+                    const empName=emp.firstName&&emp.lastName?`${emp.firstName} ${emp.lastName}`.toUpperCase():'';
+                    html+=`<tr><td class="sno">${rowNum}</td><td class="name">${empName}</td>`;
+                    
+                    let workDays=0,leaveDays=0;
+                    
+                    for(let d=1;d<=dim;d++){
+                        const dateStr=`${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+                        const dow=new Date(y,m-1,d).getDay();
+                        const isWE=(dow===0||dow===6);
+                        const isHol=hols.includes(dateStr);
+                        const rec=records.find(r=>r.employeeId===emp.id&&r.date===dateStr);
+                        
+                        let cls=isWE?'weekend':isHol?'holiday':'';
+                        let val='';
+                        
+                        if(!empName){
+                            val='';
+                        }else if(isHol){
+                            val='RT';cls='holiday';
+                        }else if(rec&&rec.checkIn){
+                            val='X';cls='worked';workDays++;
+                        }else if(isWE){
+                            val='';
+                        }else if(empName&&new Date(dateStr)<=new Date()){
+                            val='';
+                        }
+                        
+                        html+=`<td class="${cls}">${val}</td>`;
+                    }
+                    
+                    html+=`<td class="total">${workDays||''}</td><td class="total">${leaveDays||''}</td></tr>`;
+                    rowNum++;
+                }
+                
+                while(rowNum<=20){
+                    html+=`<tr><td class="sno">${rowNum}</td><td class="name"></td>`;
+                    for(let d=1;d<=dim;d++){
+                        const dow=new Date(y,m-1,d).getDay();
+                        const isWE=(dow===0||dow===6);
+                        html+=`<td class="${isWE?'weekend':''}"></td>`;
+                    }
+                    html+=`<td class="total"></td><td class="total"></td></tr>`;
+                    rowNum++;
+                }
+                
+                html+=`<tr><td colspan="${dim+4}" class="footer">
+<b>AÇIKLAMALAR:</b> X=Çalıştı | Yİ=Yıllık İzin | Ü=Ücretsiz İzin | R=Raporlu | RT=Resmi Tatil | M=Mazeret İzni
+</td></tr>
+<tr><td colspan="${Math.floor((dim+4)/2)}" style="padding:20px;border:none;">
+<b>HAZIRLAYAN</b><br><br><br>İmza: _______________<br>Tarih: ___/___/______
+</td>
+<td colspan="${Math.ceil((dim+4)/2)}" style="padding:20px;border:none;">
+<b>ONAYLAYAN</b><br><br><br>İmza: _______________<br>Tarih: ___/___/______
+</td></tr>
+</table></body></html>`;
+                
+                const blob=new Blob([html],{type:'application/vnd.ms-excel;charset=utf-8'});
+                const link=document.createElement('a');
+                link.href=URL.createObjectURL(blob);
+                link.download=`${currentComp.name}_${monthNames[m]}_${y}_PUANTAJ.xls`;
+                link.click();
+                
+                hideLoad();
+                toast('Puantaj Excel indirildi!');
+            }catch(e){
+                hideLoad();
+                console.error(e);
+                toast('Hata','error');
+            }
+        };
+        function downloadCSV(csv,fn){ const b=new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8;'}),l=document.createElement('a');l.href=URL.createObjectURL(b);l.download=fn;l.click();toast('İndirildi!'); }
+
+        // Settings
+        function loadSettings(){
+            document.getElementById('workStart').value=currentComp.workStartTime||'09:00';
+            document.getElementById('workEnd').value=currentComp.workEndTime||'18:00';
+            const wDays=currentComp.workDays||[1,2,3,4,5];
+            document.querySelectorAll('#workDays .day-btn').forEach(b=>{const d=parseInt(b.dataset.day);b.classList.toggle('active',wDays.includes(d));b.onclick=()=>b.classList.toggle('active');});
+            loadHolidays();
+        }
+        function loadHolidays(){
+            const hols=currentComp.holidays||DEFAULT_HOLIDAYS;
+            document.getElementById('holidayList').innerHTML=hols.map((h,i)=>`<div class="holiday-item"><span>${h.date} - ${h.name}</span><button onclick="delHol(${i})" style="background:none;border:none;color:var(--danger);cursor:pointer;">✕</button></div>`).join('');
+        }
+        window.addHoliday = () => {
+            const d=document.getElementById('newHolDate').value,n=document.getElementById('newHolName').value.trim();
+            if(!d||!n){toast('Tarih ve ad girin','warning');return;}
+            if(!currentComp.holidays)currentComp.holidays=[...DEFAULT_HOLIDAYS];
+            currentComp.holidays.push({date:d,name:n});loadHolidays();
+            document.getElementById('newHolDate').value='';document.getElementById('newHolName').value='';toast('Eklendi');
+        };
+        window.delHol = i => { currentComp.holidays.splice(i,1); loadHolidays(); };
+        window.saveSettings = async () => {
+            const wDays=[];document.querySelectorAll('#workDays .day-btn.active').forEach(b=>wDays.push(parseInt(b.dataset.day)));
+            const holidays = currentComp.holidays || [...DEFAULT_HOLIDAYS];
+            showLoad('Kaydediliyor...');
+            try{ await updateDoc(doc(db,'companies',currentComp.id),{workStartTime:document.getElementById('workStart').value,workEndTime:document.getElementById('workEnd').value,workDays:wDays,holidays:holidays});
+                currentComp.workStartTime=document.getElementById('workStart').value;currentComp.workEndTime=document.getElementById('workEnd').value;currentComp.workDays=wDays;currentComp.holidays=holidays;
+                hideLoad();toast('Kaydedildi!');
+            }catch(e){hideLoad();toast('Hata: '+e.message,'error');console.error(e);}
+        };
+        window.changeCompPwd = async () => {
+            const p=document.getElementById('newCompPwdChange').value;if(!p||p.length<4){toast('En az 4 karakter','error');return;}
+            try{await updateDoc(doc(db,'companies',currentComp.id),{password:p});currentComp.password=p;document.getElementById('newCompPwdChange').value='';toast('Şifre değiştirildi!');}catch(e){toast('Hata','error');}
+        };
+        window.companyLogout = () => { currentComp=null;document.getElementById('compLoginPwd').value='';showPage('roleSelectionPage'); };
+
+        // Employee
+        window.showEmployeePage = async () => { showPage('employeePage'); await loadEmpComps(); updateEmpClock(); setInterval(updateEmpClock,1000); };
+        async function loadEmpComps(){
+            const c=document.getElementById('empCompList');
+            try{ const s=await getDocs(collection(db,'companies'));
+                if(s.empty){c.innerHTML='<p style="text-align:center;color:var(--gray-500);">Firma yok</p>';return;}
+                c.innerHTML=s.docs.map(d=>`<div class="company-card" onclick="empSelectComp('${d.id}')"><h3>🏢 ${d.data().name}</h3></div>`).join('');
+            }catch(e){}
+        }
+        window.empSelectComp = async id => {
+            showLoad('Yükleniyor...');
+            try{ const d=await getDoc(doc(db,'companies',id));
+                if(d.exists()){ currentComp={id:d.id,...d.data()};
+                    const q=query(collection(db,'employees'),where('deviceId','==',getDevId()),where('companyId','==',id)),es=await getDocs(q);
+                    hideLoad();
+                    if(!es.empty){currentEmp={id:es.docs[0].id,...es.docs[0].data()};showEmpAttendance();}
+                    else showEmpRegister();
+                }
+            }catch(e){hideLoad();toast('Hata','error');}
+        };
+        function showEmpRegister(){
+            document.getElementById('empCompSelect').style.display='none';document.getElementById('empRegister').style.display='block';document.getElementById('empAttendance').style.display='none';
+            document.getElementById('empRegBadge').innerHTML='🏢 '+currentComp.name;
+            document.getElementById('empChangeBtn').style.display=urlCompId?'none':'block';document.getElementById('empBackBtn').style.display=urlCompId?'none':'block';
+        }
+        function showEmpAttendance(){
+            document.getElementById('empCompSelect').style.display='none';document.getElementById('empRegister').style.display='none';document.getElementById('empAttendance').style.display='block';
+            document.getElementById('empAttBadge').innerHTML='🏢 '+currentComp.name;document.getElementById('empStatus').textContent='Hoş geldin, '+currentEmp.firstName;
+            document.getElementById('empBackBtn').style.display=urlCompId?'none':'block';
+            loadTodayAtt();
+        }
+        window.empChangeComp = () => { if(urlCompId)return; currentComp=null;currentEmp=null;document.getElementById('empCompSelect').style.display='block';document.getElementById('empRegister').style.display='none';document.getElementById('empAttendance').style.display='none';loadEmpComps(); };
+        window.validateReg = () => { document.getElementById('regBtn').disabled=!document.getElementById('regConsent').checked; };
+        window.registerEmp = async () => {
+            const fn=document.getElementById('regFirstName').value.trim(),ln=document.getElementById('regLastName').value.trim(),ph=document.getElementById('regPhone').value.trim();
+            if(!fn||!ln||!ph){toast('Tüm alanları doldurun','error');return;}
+            showLoad('Kaydediliyor...');
+            navigator.geolocation.getCurrentPosition(async()=>{
+                try{ const ne={companyId:currentComp.id,companyName:currentComp.name,firstName:fn,lastName:ln,phone:ph,deviceId:getDevId(),createdAt:new Date()};
+                    const r=await addDoc(collection(db,'employees'),ne);currentEmp={id:r.id,...ne};hideLoad();toast('Kayıt başarılı!');showEmpAttendance();
+                }catch(e){hideLoad();toast('Hata','error');}
+            },()=>{hideLoad();toast('Konum izni gerekli','error');},{enableHighAccuracy:true,timeout:30000});
+        };
+        window.setEmpMethod = m => {
+            empMethod=m;document.getElementById('empMethodLoc').classList.toggle('active',m==='loc');document.getElementById('empMethodQR').classList.toggle('active',m==='qr');
+            document.getElementById('empLocDiv').style.display=m==='loc'?'block':'none';document.getElementById('empQRDiv').style.display=m==='qr'?'block':'none';
+            if(m==='qr')startQR(); else if(qrScanner)try{qrScanner.stop();}catch(e){}
+        };
+        window.getEmpLoc = () => {
+            showLoad('Konum...');
+            navigator.geolocation.getCurrentPosition(p=>{currentLoc={lat:p.coords.latitude,lng:p.coords.longitude};hideLoad();
+                const dist=calcDist(currentLoc.lat,currentLoc.lng,currentComp.latitude,currentComp.longitude),ok=dist<=currentComp.radius;
+                document.getElementById('empLocStatus').style.display='block';
+                document.getElementById('empLocStatus').className='location-info'+(ok?'':' error');
+                document.getElementById('empLocStatus').innerHTML=ok?'✅ İşyerine '+Math.round(dist)+'m':'⚠️ İşyeri dışı: '+Math.round(dist)+'m';
+                document.getElementById('empLocText').textContent='Yenile';toast('Konum alındı!');
+            },()=>{hideLoad();toast('Konum alınamadı','error');},{enableHighAccuracy:true,timeout:20000});
+        };
+        function startQR(){
+            const div=document.getElementById('emp-qr-reader');div.innerHTML='';if(qrScanner)try{qrScanner.stop();}catch(e){}
+            qrScanner=new Html5Qrcode('emp-qr-reader');
+            qrScanner.start({facingMode:'environment'},{fps:10,qrbox:{width:200,height:200}},t=>{
+                if(t.startsWith('PUANTAJ-'+currentComp.id)){qrScanner.stop();handleQR();}else toast('Geçersiz QR','error');
+            },()=>{}).catch(()=>toast('Kamera açılamadı','error'));
+        }
+        async function handleQR(){ toast('QR okundu!'); const q=query(collection(db,'attendance'),where('employeeId','==',currentEmp.id),where('date','==',today())),s=await getDocs(q); if(s.empty||s.docs[0].data().checkOut)await doCheckIn('qr');else await doCheckOut('qr'); }
+        window.doCheckIn = async (m=empMethod) => {
+            if(m==='loc'&&!currentLoc){toast('Önce konum alın','warning');return;}
+            showLoad('Kaydediliyor...');
+            try{ const q=query(collection(db,'attendance'),where('employeeId','==',currentEmp.id),where('date','==',today())),s=await getDocs(q);
+                if(!s.empty&&!s.docs[0].data().checkOut){hideLoad();toast('Zaten giriş yaptınız','warning');return;}
+                await addDoc(collection(db,'attendance'),{employeeId:currentEmp.id,employeeName:currentEmp.firstName+' '+currentEmp.lastName,companyId:currentComp.id,companyName:currentComp.name,date:today(),checkIn:new Date(),checkInMethod:m,checkInLocation:currentLoc,checkOut:null});
+                hideLoad();toast('Giriş kaydedildi! ✅');loadTodayAtt();
+            }catch(e){hideLoad();toast('Hata','error');}
+        };
+        window.doCheckOut = async (m=empMethod) => {
+            if(m==='loc'&&!currentLoc){toast('Önce konum alın','warning');return;}
+            showLoad('Kaydediliyor...');
+            try{ const q=query(collection(db,'attendance'),where('employeeId','==',currentEmp.id),where('date','==',today())),s=await getDocs(q);
+                const rec=s.docs.find(d=>!d.data().checkOut);if(!rec){hideLoad();toast('Önce giriş yapın','warning');return;}
+                await updateDoc(doc(db,'attendance',rec.id),{checkOut:new Date(),checkOutMethod:m,checkOutLocation:currentLoc});
+                hideLoad();toast('Çıkış kaydedildi! ✅');loadTodayAtt();
+            }catch(e){hideLoad();toast('Hata','error');}
+        };
+        async function loadTodayAtt(){
+            try{ const q=query(collection(db,'attendance'),where('employeeId','==',currentEmp.id),where('date','==',today())),s=await getDocs(q);
+                if(!s.empty){ const r=s.docs[0].data();document.getElementById('todayIn').textContent=fmtTime(r.checkIn);
+                    if(r.checkOut){ document.getElementById('todayOut').textContent=fmtTime(r.checkOut);
+                        const ci=r.checkIn.toDate?r.checkIn.toDate():new Date(r.checkIn),co=r.checkOut.toDate?r.checkOut.toDate():new Date(r.checkOut);
+                        document.getElementById('todayTotal').textContent=((co-ci)/3600000).toFixed(1)+' saat';
+                        document.getElementById('btnCheckIn').disabled=true;document.getElementById('btnCheckOut').disabled=true;
+                    }else{document.getElementById('todayOut').textContent='--:--';document.getElementById('todayTotal').textContent='--';document.getElementById('btnCheckIn').disabled=true;document.getElementById('btnCheckOut').disabled=false;}
+                }else{document.getElementById('todayIn').textContent='--:--';document.getElementById('todayOut').textContent='--:--';document.getElementById('todayTotal').textContent='--';document.getElementById('btnCheckIn').disabled=false;document.getElementById('btnCheckOut').disabled=true;}
+            }catch(e){}
+        }
+        function updateEmpClock(){ const n=new Date();document.getElementById('empTime').textContent=n.toLocaleTimeString('tr-TR',{hour:'2-digit',minute:'2-digit'});document.getElementById('empDate').textContent=fmtDate(n); }
+
+        // Init
+        async function initApp(){
+            if(!window.firebaseReady){setTimeout(initApp,100);return;}
+            const p=new URLSearchParams(location.search);urlCompId=p.get('firma');
+            if(urlCompId){showPage('employeePage');updateEmpClock();setInterval(updateEmpClock,1000);await empSelectComp(urlCompId);}
+            // Load forgot page select when shown
+            document.querySelectorAll('[onclick*="forgotPwdPage"]').forEach(el=>el.addEventListener('click',()=>loadCompSelect('forgotCompSelect')));
+        }
+    </script>
+</body>
+</html>
