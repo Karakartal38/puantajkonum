@@ -718,18 +718,147 @@
             }catch(e){hideLoad();console.error(e);}
         };
         window.exportMonthly = async () => {
-            const month=document.getElementById('monthlyMonth').value; if(!month){toast('Ay seçin','warning');return;}
-            const [y,m]=month.split('-').map(Number),start=`${y}-${String(m).padStart(2,'0')}-01`,end=`${y}-${String(m).padStart(2,'0')}-${new Date(y,m,0).getDate()}`;
-            try{ const q=query(collection(db,'attendance'),where('companyId','==',currentComp.id),where('date','>=',start),where('date','<=',end)),s=await getDocs(q);
-                if(s.empty){toast('Kayıt yok','warning');return;}
-                const std=calcStdHours(currentComp.workStartTime||'09:00',currentComp.workEndTime||'18:00');
-                let csv='Çalışan,Tarih,Giriş,Çıkış,Süre,Fazla Mesai\n';
-                s.docs.forEach(d=>{const r=d.data();let dur=0,ot=0;
-                    if(r.checkIn&&r.checkOut){const ci=r.checkIn.toDate?r.checkIn.toDate():new Date(r.checkIn),co=r.checkOut.toDate?r.checkOut.toDate():new Date(r.checkOut);dur=(co-ci)/3600000;ot=Math.max(0,dur-std);}
-                    csv+=`"${r.employeeName}","${r.date}","${fmtTime(r.checkIn)}","${r.checkOut?fmtTime(r.checkOut):''}","${dur.toFixed(2)}","${ot.toFixed(2)}"\n`;
+            const month=document.getElementById('monthlyMonth').value; 
+            if(!month){toast('Ay seçin','warning');return;}
+            
+            showLoad('Puantaj hazırlanıyor...');
+            
+            const [y,m]=month.split('-').map(Number);
+            const dim=new Date(y,m,0).getDate();
+            const monthNames=['','OCAK','ŞUBAT','MART','NİSAN','MAYIS','HAZİRAN','TEMMUZ','AĞUSTOS','EYLÜL','EKİM','KASIM','ARALIK'];
+            const dayNamesFull=['PAZAR','PAZARTESİ','SALI','ÇARŞAMBA','PERŞEMBE','CUMA','CUMARTESİ'];
+            const wDays=currentComp.workDays||[1,2,3,4,5];
+            const hols=(currentComp.holidays||DEFAULT_HOLIDAYS).map(h=>h.date);
+            
+            try{
+                const empQ=query(collection(db,'employees'),where('companyId','==',currentComp.id));
+                const empSnap=await getDocs(empQ);
+                let employees=empSnap.docs.map(d=>({id:d.id,...d.data()}));
+                
+                employees=employees.filter(e=>{
+                    if(!e.endDate) return true;
+                    return e.endDate.substring(0,7)>=month;
                 });
-                downloadCSV(csv,currentComp.name+'_'+month+'_aylik.csv');
-            }catch(e){}
+                
+                if(employees.length===0){
+                    for(let i=0;i<15;i++) employees.push({id:'bos'+i,firstName:'',lastName:''});
+                }
+                
+                const start=`${y}-${String(m).padStart(2,'0')}-01`;
+                const end=`${y}-${String(m).padStart(2,'0')}-${dim}`;
+                const attQ=query(collection(db,'attendance'),where('companyId','==',currentComp.id),where('date','>=',start),where('date','<=',end));
+                const attSnap=await getDocs(attQ);
+                const records=attSnap.docs.map(d=>d.data());
+                
+                // HTML tabanlı Excel dosyası oluştur (renkli)
+                let html=`<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+<head><meta charset="UTF-8">
+<style>
+td,th{border:1px solid #333;padding:4px 6px;text-align:center;font-family:Arial;font-size:10pt;}
+.header{background:#2E7D32;color:white;font-weight:bold;}
+.subheader{background:#4CAF50;color:white;font-size:8pt;}
+.weekend{background:#FFF59D;}
+.holiday{background:#FFCDD2;}
+.name{text-align:left;min-width:150px;}
+.sno{width:30px;}
+.worked{background:#C8E6C9;font-weight:bold;}
+.absent{background:#FFCDD2;}
+.leave{background:#BBDEFB;color:#1565C0;}
+.total{background:#E3F2FD;font-weight:bold;}
+.footer{background:#FFF3E0;font-size:9pt;text-align:left;}
+</style>
+</head><body>
+<table>
+<tr><td colspan="${dim+4}" style="background:#1565C0;color:white;font-size:14pt;font-weight:bold;text-align:center;padding:10px;">
+${currentComp.name.toUpperCase()} - ${monthNames[m]} ${y} PUANTAJ CETVELİ
+</td></tr>
+<tr><td colspan="${dim+4}" style="background:#1976D2;color:white;font-size:9pt;text-align:center;">
+Çalışma Saatleri: ${currentComp.workStartTime||'09:00'} - ${currentComp.workEndTime||'18:00'} | Hazırlanma: ${new Date().toLocaleDateString('tr-TR')}
+</td></tr>
+<tr class="header"><th class="sno">S.NO</th><th class="name">ADI SOYADI</th>`;
+                
+                for(let d=1;d<=dim;d++) html+=`<th>${d}</th>`;
+                html+=`<th>Ç.GÜN</th><th>İZİN</th></tr>`;
+                
+                html+=`<tr class="subheader"><th></th><th></th>`;
+                for(let d=1;d<=dim;d++){
+                    const dow=new Date(y,m-1,d).getDay();
+                    const isWE=(dow===0||dow===6);
+                    html+=`<th${isWE?' class="weekend"':''}>${dayNamesFull[dow].substring(0,3)}</th>`;
+                }
+                html+=`<th></th><th></th></tr>`;
+                
+                let rowNum=1;
+                for(const emp of employees){
+                    const empName=emp.firstName&&emp.lastName?`${emp.firstName} ${emp.lastName}`.toUpperCase():'';
+                    html+=`<tr><td class="sno">${rowNum}</td><td class="name">${empName}</td>`;
+                    
+                    let workDays=0,leaveDays=0;
+                    
+                    for(let d=1;d<=dim;d++){
+                        const dateStr=`${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+                        const dow=new Date(y,m-1,d).getDay();
+                        const isWE=(dow===0||dow===6);
+                        const isHol=hols.includes(dateStr);
+                        const rec=records.find(r=>r.employeeId===emp.id&&r.date===dateStr);
+                        
+                        let cls=isWE?'weekend':isHol?'holiday':'';
+                        let val='';
+                        
+                        if(!empName){
+                            val='';
+                        }else if(isHol){
+                            val='RT';cls='holiday';
+                        }else if(rec&&rec.checkIn){
+                            val='X';cls='worked';workDays++;
+                        }else if(isWE){
+                            val='';
+                        }else if(empName&&new Date(dateStr)<=new Date()){
+                            val='';
+                        }
+                        
+                        html+=`<td class="${cls}">${val}</td>`;
+                    }
+                    
+                    html+=`<td class="total">${workDays||''}</td><td class="total">${leaveDays||''}</td></tr>`;
+                    rowNum++;
+                }
+                
+                while(rowNum<=20){
+                    html+=`<tr><td class="sno">${rowNum}</td><td class="name"></td>`;
+                    for(let d=1;d<=dim;d++){
+                        const dow=new Date(y,m-1,d).getDay();
+                        const isWE=(dow===0||dow===6);
+                        html+=`<td class="${isWE?'weekend':''}"></td>`;
+                    }
+                    html+=`<td class="total"></td><td class="total"></td></tr>`;
+                    rowNum++;
+                }
+                
+                html+=`<tr><td colspan="${dim+4}" class="footer">
+<b>AÇIKLAMALAR:</b> X=Çalıştı | Yİ=Yıllık İzin | Ü=Ücretsiz İzin | R=Raporlu | RT=Resmi Tatil | M=Mazeret İzni
+</td></tr>
+<tr><td colspan="${Math.floor((dim+4)/2)}" style="padding:20px;border:none;">
+<b>HAZIRLAYAN</b><br><br><br>İmza: _______________<br>Tarih: ___/___/______
+</td>
+<td colspan="${Math.ceil((dim+4)/2)}" style="padding:20px;border:none;">
+<b>ONAYLAYAN</b><br><br><br>İmza: _______________<br>Tarih: ___/___/______
+</td></tr>
+</table></body></html>`;
+                
+                const blob=new Blob([html],{type:'application/vnd.ms-excel;charset=utf-8'});
+                const link=document.createElement('a');
+                link.href=URL.createObjectURL(blob);
+                link.download=`${currentComp.name}_${monthNames[m]}_${y}_PUANTAJ.xls`;
+                link.click();
+                
+                hideLoad();
+                toast('Puantaj Excel indirildi!');
+            }catch(e){
+                hideLoad();
+                console.error(e);
+                toast('Hata','error');
+            }
         };
         function downloadCSV(csv,fn){ const b=new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8;'}),l=document.createElement('a');l.href=URL.createObjectURL(b);l.download=fn;l.click();toast('İndirildi!'); }
 
