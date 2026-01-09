@@ -139,7 +139,6 @@
                     <input type="password" id="superAdminPwd" placeholder="Süper admin şifresi">
                 </div>
                 <button class="btn btn-purple" onclick="superAdminLogin()">Giriş Yap</button>
-                <p style="text-align:center;color:var(--gray-500);font-size:11px;margin-top:8px;">Varsayılan: <b>super123</b></p>
             </div>
             <button class="btn btn-outline" onclick="showPage('roleSelectionPage')">← Geri</button>
         </div>
@@ -209,6 +208,7 @@
                 <button class="tab active" onclick="showCompTab('link')">🔗</button>
                 <button class="tab" onclick="showCompTab('qr')">📱</button>
                 <button class="tab" onclick="showCompTab('employees')">👥</button>
+                <button class="tab" onclick="showCompTab('manualAtt')">✍️</button>
                 <button class="tab" onclick="showCompTab('daily')">📋</button>
                 <button class="tab" onclick="showCompTab('monthly')">📊</button>
                 <button class="tab" onclick="showCompTab('settings')">⚙️</button>
@@ -240,8 +240,50 @@
             <!-- Employees Tab -->
             <div id="employeesTab" class="comp-tab" style="display:none;">
                 <div class="card">
+                    <div class="card-title">➕ Manuel Personel Ekle</div>
+                    <div class="input-group"><label>Ad *</label><input type="text" id="manualFirstName" placeholder="Ad"></div>
+                    <div class="input-group"><label>Soyad *</label><input type="text" id="manualLastName" placeholder="Soyad"></div>
+                    <div class="input-group"><label>Telefon *</label><input type="tel" id="manualPhone" placeholder="05XX XXX XX XX"></div>
+                    <div class="input-group"><label>İşe Başlangıç Tarihi *</label><input type="date" id="manualStartDate"></div>
+                    <button class="btn btn-success btn-sm" onclick="addManualEmployee()">➕ Personel Ekle</button>
+                </div>
+                <div class="card">
                     <div class="card-title">👥 Çalışanlar</div>
                     <div id="compEmpList"></div>
+                </div>
+                <div id="empEditModal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:1000;padding:20px;">
+                    <div style="background:white;border-radius:14px;padding:16px;max-width:400px;margin:50px auto;">
+                        <div class="card-title">✏️ Personel Düzenle</div>
+                        <input type="hidden" id="editEmpId">
+                        <div class="input-group"><label>Ad</label><input type="text" id="editFirstName"></div>
+                        <div class="input-group"><label>Soyad</label><input type="text" id="editLastName"></div>
+                        <div class="input-group"><label>Telefon</label><input type="tel" id="editPhone"></div>
+                        <div class="input-group"><label>İşe Başlangıç</label><input type="date" id="editStartDate"></div>
+                        <div class="input-group"><label>İşten Çıkış</label><input type="date" id="editEndDate"><small style="color:var(--gray-500);">Boş bırakın = Hala çalışıyor</small></div>
+                        <div class="btn-group" style="margin-top:10px;">
+                            <button class="btn btn-primary btn-sm" onclick="saveEmpEdit()">💾 Kaydet</button>
+                            <button class="btn btn-outline btn-sm" onclick="closeEmpEdit()">İptal</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Manual Attendance Tab -->
+            <div id="manualAttTab" class="comp-tab" style="display:none;">
+                <div class="card">
+                    <div class="card-title">✍️ Manuel Giriş/Çıkış Kaydet</div>
+                    <p style="font-size:12px;color:var(--gray-500);margin-bottom:10px;">Telefonu olmayan veya şarjı biten çalışan için</p>
+                    <div class="input-group"><label>Çalışan *</label><select id="manualAttEmp"><option value="">Seçin...</option></select></div>
+                    <div class="input-group"><label>Tarih *</label><input type="date" id="manualAttDate"></div>
+                    <div class="btn-group">
+                        <div class="input-group"><label>Giriş Saati</label><input type="time" id="manualAttIn"></div>
+                        <div class="input-group"><label>Çıkış Saati</label><input type="time" id="manualAttOut"></div>
+                    </div>
+                    <button class="btn btn-primary btn-sm" onclick="saveManualAttendance()">💾 Kaydet</button>
+                </div>
+                <div class="card">
+                    <div class="card-title">📋 Bugünkü Kayıtlar</div>
+                    <div id="manualAttList"></div>
                 </div>
             </div>
 
@@ -517,9 +559,89 @@
             const c=document.getElementById('compEmpList');
             try{ const q=query(collection(db,'employees'),where('companyId','==',currentComp.id)),s=await getDocs(q);
                 if(s.empty){c.innerHTML='<p style="text-align:center;color:var(--gray-500);">Çalışan yok</p>';return;}
-                c.innerHTML=s.docs.map(d=>{const e=d.data();return `<div class="employee-card"><div><div class="name">${e.firstName} ${e.lastName}</div><div class="detail">📱 ${e.phone}</div></div><button onclick="delEmp('${d.id}')" style="background:none;border:none;color:var(--danger);cursor:pointer;">🗑️</button></div>`;}).join('');
-            }catch(e){}
+                c.innerHTML=s.docs.map(d=>{
+                    const e=d.data();
+                    const startDate = e.startDate || '-';
+                    const endDate = e.endDate || '';
+                    const status = endDate ? '<span style="color:var(--danger);">Ayrıldı</span>' : '<span style="color:var(--success);">Aktif</span>';
+                    return `<div class="employee-card" style="flex-direction:column;align-items:flex-start;gap:6px;">
+                        <div style="display:flex;justify-content:space-between;width:100%;align-items:center;">
+                            <div class="name">${e.firstName} ${e.lastName}</div>
+                            <div>${status}</div>
+                        </div>
+                        <div class="detail">📱 ${e.phone} | 📅 Başlangıç: ${startDate}${endDate ? ' | Çıkış: '+endDate : ''}</div>
+                        <div style="display:flex;gap:8px;margin-top:4px;">
+                            <button onclick="editEmp('${d.id}')" style="background:none;border:none;color:var(--primary);cursor:pointer;font-size:12px;">✏️ Düzenle</button>
+                            <button onclick="delEmp('${d.id}')" style="background:none;border:none;color:var(--danger);cursor:pointer;font-size:12px;">🗑️ Sil</button>
+                        </div>
+                    </div>`;
+                }).join('');
+            }catch(e){console.error(e);}
         }
+        window.editEmp = async id => {
+            try{
+                const d = await getDoc(doc(db,'employees',id));
+                if(d.exists()){
+                    const e = d.data();
+                    document.getElementById('editEmpId').value = id;
+                    document.getElementById('editFirstName').value = e.firstName || '';
+                    document.getElementById('editLastName').value = e.lastName || '';
+                    document.getElementById('editPhone').value = e.phone || '';
+                    document.getElementById('editStartDate').value = e.startDate || '';
+                    document.getElementById('editEndDate').value = e.endDate || '';
+                    document.getElementById('empEditModal').style.display = 'block';
+                }
+            }catch(e){toast('Hata','error');}
+        };
+        window.saveEmpEdit = async () => {
+            const id = document.getElementById('editEmpId').value;
+            const data = {
+                firstName: document.getElementById('editFirstName').value.trim(),
+                lastName: document.getElementById('editLastName').value.trim(),
+                phone: document.getElementById('editPhone').value.trim(),
+                startDate: document.getElementById('editStartDate').value,
+                endDate: document.getElementById('editEndDate').value
+            };
+            if(!data.firstName || !data.lastName){toast('Ad ve soyad gerekli','error');return;}
+            showLoad('Kaydediliyor...');
+            try{
+                await updateDoc(doc(db,'employees',id), data);
+                hideLoad();
+                toast('Kaydedildi!');
+                closeEmpEdit();
+                loadCompEmps();
+            }catch(e){hideLoad();toast('Hata','error');}
+        };
+        window.closeEmpEdit = () => { document.getElementById('empEditModal').style.display = 'none'; };
+        window.addManualEmployee = async () => {
+            const fn = document.getElementById('manualFirstName').value.trim();
+            const ln = document.getElementById('manualLastName').value.trim();
+            const ph = document.getElementById('manualPhone').value.trim();
+            const startDate = document.getElementById('manualStartDate').value;
+            if(!fn || !ln || !ph || !startDate){toast('Tüm alanları doldurun','error');return;}
+            showLoad('Ekleniyor...');
+            try{
+                await addDoc(collection(db,'employees'),{
+                    companyId: currentComp.id,
+                    companyName: currentComp.name,
+                    firstName: fn,
+                    lastName: ln,
+                    phone: ph,
+                    startDate: startDate,
+                    endDate: '',
+                    deviceId: 'MANUAL-'+Date.now(),
+                    createdAt: new Date()
+                });
+                hideLoad();
+                toast('Personel eklendi!');
+                document.getElementById('manualFirstName').value = '';
+                document.getElementById('manualLastName').value = '';
+                document.getElementById('manualPhone').value = '';
+                document.getElementById('manualStartDate').value = '';
+                loadCompEmps();
+                loadMonthlyEmpSelect();
+            }catch(e){hideLoad();toast('Hata','error');console.error(e);}
+        };
         async function loadMonthlyEmpSelect(){
             try{ const q=query(collection(db,'employees'),where('companyId','==',currentComp.id)),s=await getDocs(q);
                 document.getElementById('monthlyEmp').innerHTML='<option value="">Tümü</option>'+s.docs.map(d=>`<option value="${d.id}">${d.data().firstName} ${d.data().lastName}</option>`).join('');
