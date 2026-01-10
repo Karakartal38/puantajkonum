@@ -381,8 +381,55 @@
                     <div class="input-group"><label>Ad *</label><input type="text" id="regFirstName" placeholder="Adınız"></div>
                     <div class="input-group"><label>Soyad *</label><input type="text" id="regLastName" placeholder="Soyadınız"></div>
                     <div class="input-group"><label>Telefon *</label><input type="tel" id="regPhone" placeholder="05XX XXX XX XX"></div>
-                    <label class="checkbox-label"><input type="checkbox" id="regConsent" onchange="validateReg()"> KVKK'yı kabul ediyorum</label>
+                    <label class="checkbox-label"><input type="checkbox" id="regConsent" onchange="validateReg()"> <span onclick="showKVKK()" style="color:var(--primary);text-decoration:underline;cursor:pointer;">KVKK Aydınlatma Metni</span>'ni okudum, kabul ediyorum</label>
                     <button class="btn btn-success" onclick="registerEmp()" id="regBtn" disabled style="margin-top:10px;">Kayıt Ol</button>
+                </div>
+            </div>
+
+            <!-- KVKK Modal -->
+            <div id="kvkkModal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.7);z-index:1000;padding:10px;overflow-y:auto;">
+                <div style="background:white;border-radius:14px;padding:16px;max-width:500px;margin:20px auto;max-height:90vh;overflow-y:auto;">
+                    <div class="card-title">📋 KİŞİSEL VERİLERİN KORUNMASI HAKKINDA AYDINLATMA METNİ</div>
+                    <div style="font-size:12px;line-height:1.6;color:var(--gray-700);">
+                        <p style="margin-bottom:10px;"><strong>1. Veri Sorumlusu</strong><br>
+                        Bu aydınlatma metni, 6698 sayılı Kişisel Verilerin Korunması Kanunu ("KVKK") kapsamında, veri sorumlusu sıfatıyla işvereniniz tarafından hazırlanmıştır.</p>
+                        
+                        <p style="margin-bottom:10px;"><strong>2. İşlenen Kişisel Veriler</strong><br>
+                        Puantaj sistemi kapsamında aşağıdaki kişisel verileriniz işlenmektedir:<br>
+                        • Kimlik bilgileri (Ad, Soyad)<br>
+                        • İletişim bilgileri (Telefon numarası)<br>
+                        • Konum bilgileri (Giriş/Çıkış sırasında)<br>
+                        • Çalışma verileri (Giriş/Çıkış saatleri, çalışma süreleri)</p>
+                        
+                        <p style="margin-bottom:10px;"><strong>3. Kişisel Verilerin İşlenme Amaçları</strong><br>
+                        Kişisel verileriniz aşağıdaki amaçlarla işlenmektedir:<br>
+                        • Çalışan devam takibinin yapılması<br>
+                        • Puantaj kayıtlarının tutulması<br>
+                        • Bordro ve özlük işlemlerinin yürütülmesi<br>
+                        • Yasal yükümlülüklerin yerine getirilmesi<br>
+                        • İş sözleşmesinin ifası</p>
+                        
+                        <p style="margin-bottom:10px;"><strong>4. Kişisel Verilerin Aktarılması</strong><br>
+                        Kişisel verileriniz, yasal zorunluluklar kapsamında yetkili kamu kurum ve kuruluşlarına, bordro ve muhasebe hizmeti alınan firmalara aktarılabilecektir.</p>
+                        
+                        <p style="margin-bottom:10px;"><strong>5. Kişisel Veri Toplamanın Yöntemi ve Hukuki Sebebi</strong><br>
+                        Kişisel verileriniz, elektronik ortamda bu uygulama aracılığıyla toplanmaktadır. Hukuki sebep olarak; iş sözleşmesinin ifası, yasal yükümlülüklerin yerine getirilmesi ve meşru menfaat dayanaklarına dayanılmaktadır.</p>
+                        
+                        <p style="margin-bottom:10px;"><strong>6. KVKK Kapsamındaki Haklarınız</strong><br>
+                        KVKK'nın 11. maddesi uyarınca aşağıdaki haklara sahipsiniz:<br>
+                        • Kişisel verilerinizin işlenip işlenmediğini öğrenme<br>
+                        • Kişisel verileriniz işlenmişse buna ilişkin bilgi talep etme<br>
+                        • Kişisel verilerinizin işlenme amacını ve bunların amacına uygun kullanılıp kullanılmadığını öğrenme<br>
+                        • Kişisel verilerinizin düzeltilmesini veya silinmesini isteme<br>
+                        • İşlenen verilerin münhasıran otomatik sistemler vasıtasıyla analiz edilmesi suretiyle aleyhinize bir sonucun ortaya çıkmasına itiraz etme</p>
+                        
+                        <p style="margin-bottom:10px;"><strong>7. Konum Verisi Hakkında</strong><br>
+                        Giriş ve çıkış işlemleriniz sırasında konum bilginiz, yalnızca işyeri sınırları içinde olup olmadığınızı doğrulamak amacıyla anlık olarak alınmakta ve kaydedilmektedir. Bu veri, iş sözleşmenizin ifası kapsamında işlenmektedir.</p>
+                        
+                        <p><strong>8. İletişim</strong><br>
+                        KVKK kapsamındaki talepleriniz için işvereninizin İnsan Kaynakları birimine başvurabilirsiniz.</p>
+                    </div>
+                    <button class="btn btn-primary" onclick="closeKVKK()" style="margin-top:12px;">Okudum, Anladım</button>
                 </div>
             </div>
 
@@ -896,6 +943,10 @@ ${currentComp.name.toUpperCase()} - ${monthNames[m]} ${y} PUANTAJ CETVELİ
             try{await updateDoc(doc(db,'companies',currentComp.id),{password:p});currentComp.password=p;document.getElementById('newCompPwdChange').value='';toast('Şifre değiştirildi!');}catch(e){toast('Hata','error');}
         };
         window.companyLogout = () => { currentComp=null;document.getElementById('compLoginPwd').value='';showPage('roleSelectionPage'); };
+
+        // KVKK Modal
+        window.showKVKK = () => { document.getElementById('kvkkModal').style.display='block'; };
+        window.closeKVKK = () => { document.getElementById('kvkkModal').style.display='none'; };
 
         // Employee
         window.showEmployeePage = async () => { showPage('employeePage'); await loadEmpComps(); updateEmpClock(); setInterval(updateEmpClock,1000); };
